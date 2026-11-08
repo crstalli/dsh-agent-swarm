@@ -25,10 +25,11 @@ module.exports.apply = function(ctx, config) {
   const agents = ctx.get('agents');
 
   // --- Configuration ---
+  const cfg = config || {};
   const HUB_URL = process.env.DSH_COORD_HUB_URL || 'http://127.0.0.1:4100';
   const HUB_TOKEN = process.env.DSH_COORD_HUB_TOKEN || 'dev-token';
-  const DEFAULT_LEASE_TTL = config.leaseTtl || 300000; // 5 minutes
-  const WAKE_POLL_INTERVAL = config.wakePollInterval || 3000; // 3 seconds
+  const DEFAULT_LEASE_TTL = cfg.leaseTtl || 300000; // 5 minutes
+  const WAKE_POLL_INTERVAL = cfg.wakePollInterval || 3000; // 3 seconds
 
   // --- Hub API Client ---
   const hubCall = async (method, pathname, body) => {

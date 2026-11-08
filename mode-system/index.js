@@ -26,9 +26,10 @@ module.exports.apply = function(ctx, config) {
   const command = ctx.get('command');
 
   // --- Configuration ---
+  const cfg = config || {};
   const HUB_URL = process.env.DSH_COORD_HUB_URL || 'http://127.0.0.1:4100';
   const HUB_TOKEN = process.env.DSH_COORD_HUB_TOKEN || 'dev-token';
-  const MODES_DIR = config.modesDir || path.join(process.cwd(), 'modes');
+  const MODES_DIR = cfg.modesDir || path.join(process.cwd(), 'modes');
 
   // Ensure modes directory exists
   try { fs.mkdirSync(MODES_DIR, { recursive: true }); } catch {}
