@@ -1,0 +1,10 @@
+# resource-mgr Cordis plugin configuration
+# Implements: wake policies (immediate/batched/on-resource-free/scheduled/poll-only)
+#             lease management (integrates existing subagent-pool)
+
+- id: resource-mgr
+  name: './resource-mgr/index.js'
+  config:
+    leaseTtl: 300000
+    wakePollInterval: 3000
+    hubToken: ${DSH_COORD_HUB_TOKEN:-dev-token}

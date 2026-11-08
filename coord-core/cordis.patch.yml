@@ -1,0 +1,8 @@
+# coord-core Cordis plugin configuration
+# Implements: hub server + session-store + broadcast
+
+- id: coord-core
+  name: './coord-core/index.js'
+  config:
+    hubPort: ${DSH_COORD_HUB_PORT:-4100}
+    hubToken: ${DSH_COORD_HUB_TOKEN:-dev-token}

@@ -1,0 +1,8 @@
+# mode-system Cordis plugin configuration
+# Implements: run-modes + prompt-layers + skill-markdowns
+
+- id: mode-system
+  name: './mode-system/index.js'
+  config:
+    modesDir: modes
+    hubToken: ${DSH_COORD_HUB_TOKEN:-dev-token}

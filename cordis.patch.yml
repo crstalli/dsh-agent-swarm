@@ -1,0 +1,28 @@
+# DSH Agent Swarm — Cordis plugin composition
+# Implements: coord-core (hub+session-store+broadcast), mode-system (run-modes+prompt-layers), resource-mgr (wake+leases)
+#
+# Install: dsh plugin --profile PWtest add "github:<org>/dsh-agent-swarm#<full-sha>"
+#
+# Prerequisites:
+#   - Hub server starts on port 4100 (configurable via DSH_COORD_HUB_PORT)
+#   - DSH_COORD_HUB_TOKEN env var for auth
+#   - pwtest profile on port 3083+ (never 3080)
+
+- id: coord-core
+  name: './coord-core/index.js'
+  config:
+    hubPort: ${DSH_COORD_HUB_PORT:-4100}
+    hubToken: ${DSH_COORD_HUB_TOKEN:-dev-token}
+
+- id: mode-system
+  name: './mode-system/index.js'
+  config:
+    modesDir: modes
+    hubToken: ${DSH_COORD_HUB_TOKEN:-dev-token}
+
+- id: resource-mgr
+  name: './resource-mgr/index.js'
+  config:
+    leaseTtl: 300000
+    wakePollInterval: 3000
+    hubToken: ${DSH_COORD_HUB_TOKEN:-dev-token}
