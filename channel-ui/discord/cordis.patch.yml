@@ -1,0 +1,107 @@
+# DSH Agent Swarm - Discord Bridge Plugin Configuration
+# 
+# This plugin syncs DSH sessions to Discord channels in real-time
+
+name: dsh-agent-swarm-channel-ui-discord
+version: 1.0.0
+description: Discord bridge for DSH Agent Swarm - mirrors sessions to Discord channels
+
+# Environment variables required
+env:
+  DISCORD_TOKEN:
+    description: Discord bot token
+    required: true
+    default: ${DISCORD_TOKEN}
+  
+  DISCORD_GUILD_ID:
+    description: Discord guild/server ID to sync with
+    required: true
+  
+  DISCORD_CHANNEL_CATEGORY_ID:
+    description: Category ID where session channels will be created
+    required: true
+  
+  DSH_COORD_HUB_URL:
+    description: Hub server URL
+    required: false
+    default: http://127.0.0.1:4100
+  
+  DSH_COORD_HUB_TOKEN:
+    description: Hub server auth token
+    required: false
+    default: dev-token
+
+# Plugin hooks
+hooks:
+  on_start:
+    - name: start_discord_bridge
+      command: node /mnt/f/ai/plugins/dsh-agent-swarm/channel-ui/discord/discord-bot.js
+  
+  on_session_created:
+    - name: create_discord_channel
+      action: post_message
+      channel: discord
+      template: |
+        New session created: {{session.name}}
+        ID: {{session.id}}
+        Project: {{session.projectId}}
+  
+  on_session_archived:
+    - name: remove_discord_channel
+      action: delete_channel
+      channel: discord
+      session_id: {{session.id}}
+  
+  on_delivery:
+    - name: sync_to_discord
+      condition: session.bridge_enabled == true
+      action: post_message
+      channel: discord
+      session_id: {{session.id}}
+
+# Discord bot configuration
+discord:
+  intents:
+    - Guilds
+    - GuildMessages
+    - MessageContent
+    - GuildMembers
+  
+  features:
+    auto_create_channels: true
+    auto_delete_channels: true
+    message_sync: true
+    thread_support: true
+    reasoning_threads: true
+    system_messages: true
+
+# Session mapping rules
+mapping:
+  session_to_channel:
+    enabled: true
+    naming: "{{session.name | slugify}}"
+    topic: "DSH Session: {{session.id}}"
+  
+  message_to_delivery:
+    enabled: true
+    source: discord
+    preserve_attachments: true
+    preserve_thread_context: true
+  
+  delivery_to_message:
+    enabled: true
+    target: discord
+    use_threads_for_long_messages: true
+    long_message_threshold: 1000
+
+# Rate limiting
+rate_limits:
+  messages_per_minute: 100
+  channels_per_batch: 10
+  sync_interval_ms: 3000
+
+# Logging
+logging:
+  level: info
+  file: /mnt/f/ai/plugins/dsh-agent-swarm/channel-ui/discord/logs/discord-bridge.log
+  console: true

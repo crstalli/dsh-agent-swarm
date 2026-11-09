@@ -1,0 +1,16 @@
+{
+  "name": "dsh-agent-swarm-discord-bridge",
+  "version": "1.0.0",
+  "description": "Discord bridge for DSH Agent Swarm - syncs sessions to Discord channels",
+  "main": "discord-bot.js",
+  "scripts": {
+    "start": "node discord-bot.js",
+    "dev": "nodemon discord-bot.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "node-fetch": "^3.3.2"
+  },
+  "keywords": ["discord", "dsh", "agent-swarm", "bridge"],
+  "author": "DSH Agent Swarm"
+}
