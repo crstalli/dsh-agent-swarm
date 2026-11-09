@@ -71,6 +71,177 @@ module.exports.apply = function(ctx, config) {
     });
   };
 
+  // UI rendering helper
+  const renderUI = (pathname, data) => {
+    const baseHtml = (title, content) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>${title} - DSH Agent Swarm Hub</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+    .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    h1 { color: #333; border-bottom: 3px solid #007acc; padding-bottom: 10px; }
+    h2 { color: #555; margin-top: 30px; }
+    .status { padding: 15px; border-radius: 5px; margin: 20px 0; }
+    .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+    .warning { background: #fff3cd; border: 1px solid #ffeeba; color: #856404; }
+    .card { background: white; border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin: 10px 0; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+    th { background: #f8f9fa; font-weight: 600; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-family: monospace; }
+    .endpoint { background: #f8f9fa; padding: 10px; border-left: 4px solid #007acc; margin: 10px 0; }
+    .nav { display: flex; gap: 20px; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #ddd; }
+    .nav a { text-decoration: none; color: #007acc; font-weight: 500; }
+    .nav a:hover { text-decoration: underline; }
+    .nav a.active { color: #333; border-bottom: 2px solid #007acc; }
+    button { background: #007acc; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #005a9e; }
+    input, select { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 4px; }
+    .form-group { margin: 15px 0; }
+    pre { background: #f4f4f4; padding: 10px; border-radius: 4px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 DSH Agent Swarm Hub Monitor</h1>
+    <div class="nav">
+      <a href="/ui" class="${title === 'Dashboard' ? 'active' : ''}">Dashboard</a>
+      <a href="/ui/modes">Modes</a>
+      <a href="/ui/sessions">Sessions</a>
+      <a href="/ui/broadcasts">Broadcasts</a>
+      <a href="/ui/leases">Leases</a>
+      <a href="/ui/subscriptions">Subscriptions</a>
+    </div>
+    ${content}
+  </div>
+</body>
+</html>
+    `;
+
+    if (pathname === '/ui/' || pathname === '/ui') {
+      const content = `
+        <div class="status success">
+          <strong>✅ Hub Server Running</strong><br>
+          Port: ${HUB_PORT} | Sessions: ${data.sessions.length} | Modes: ${data.modes.length}
+        </div>
+        
+        <h2>📊 System Overview</h2>
+        <div class="grid">
+          <div class="card">
+            <h3>Hub Status</h3>
+            <p><code>http://127.0.0.1:${HUB_PORT}</code></p>
+            <p>Status: <strong>OK</strong></p>
+          </div>
+          <div class="card">
+            <h3>Active Data</h3>
+            <p>Sessions: ${data.sessions.length}</p>
+            <p>Modes: ${data.modes.length}</p>
+            <p>Broadcasts: ${data.broadcasts.length}</p>
+            <p>Leases: ${data.leases.length}</p>
+          </div>
+        </div>
+        
+        <h2>🔌 API Endpoints</h2>
+        <div class="endpoint">
+          <strong>Health Check:</strong> <code>GET /health</code>
+        </div>
+        <div class="endpoint">
+          <strong>Modes:</strong> <code>GET/POST /modes</code>
+        </div>
+        <div class="endpoint">
+          <strong>Sessions:</strong> <code>GET/POST /sessions</code>
+        </div>
+        <div class="endpoint">
+          <strong>Broadcasts:</strong> <code>GET/POST /broadcasts</code>
+        </div>
+      `;
+      return baseHtml('Dashboard', content);
+    }
+
+    if (pathname === '/ui/modes') {
+      let rows = data.modes.map(m => `
+        <tr>
+          <td><code>${m.id || m.name}</code></td>
+          <td>${m.name || 'N/A'}</td>
+          <td>${m.base_mode || 'N/A'}</td>
+          <td>${m.description || '-'}</td>
+        </tr>
+      `).join('');
+      if (!rows) rows = '<tr><td colspan="4">No modes found</td></tr>';
+      
+      const content = `
+        <h2>🎭 Run Modes</h2>
+        <p>Total: ${data.modes.length} modes</p>
+        
+        <table>
+          <thead><tr><th>ID</th><th>Name</th><th>Base Mode</th><th>Description</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        
+        <div class="card">
+          <h3>➕ Create New Mode</h3>
+          <form id="modeForm" onsubmit="createMode(event)">
+            <div class="form-group">
+              <input type="text" id="modeName" placeholder="Mode name" required>
+            </div>
+            <div class="form-group">
+              <select id="baseMode">
+                <option value="dev">dev</option>
+                <option value="test">test</option>
+                <option value="prod">prod</option>
+              </select>
+            </div>
+            <button type="submit">Create Mode</button>
+          </form>
+          <pre id="modeResult"></pre>
+        </div>
+        
+        <script>
+          async function createMode(e) {
+            e.preventDefault();
+            const data = {
+              name: document.getElementById('modeName').value,
+              base_mode: document.getElementById('baseMode').value
+            };
+            const res = await fetch('/modes', {
+              method: 'POST',
+              headers: { 'Authorization': 'Bearer dev-token', 'Content-Type': 'application/json' },
+              body: JSON.stringify(data)
+            });
+            document.getElementById('modeResult').textContent = JSON.stringify(await res.json(), null, 2);
+          }
+        </script>
+      `;
+      return baseHtml('Modes', content);
+    }
+
+    if (pathname === '/ui/sessions') {
+      let rows = data.sessions.map(s => `
+        <tr>
+          <td><code>${s.id}</code></td>
+          <td>${s.status || 'active'}</td>
+          <td>${s.last_active ? new Date(s.last_active).toLocaleString() : 'N/A'}</td>
+        </tr>
+      `).join('');
+      if (!rows) rows = '<tr><td colspan="3">No sessions found</td></tr>';
+      
+      const content = `
+        <h2>👥 Sessions</h2>
+        <p>Total: ${data.sessions.length} sessions</p>
+        <table>
+          <thead><tr><th>ID</th><th>Status</th><th>Last Active</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+      return baseHtml('Sessions', content);
+    }
+
+    return baseHtml('Not Found', '<div class="status warning">Page not found</div>');
+  };
+
   // --- Hub Server ---
   const parseBody = (req) => new Promise((resolve, reject) => {
     let body = '';
@@ -103,7 +274,15 @@ module.exports.apply = function(ctx, config) {
 
     // Health endpoint - no auth required
     if (pathname === '/health' && method === 'GET') {
-      sendJson(res, 200, { status: 'ok', port: HUB_PORT, sessions: store.sessions.length });
+      sendJson(res, 200, { status: 'ok', port: HUB_PORT, sessions: store.sessions.length, modes: store.modes?.length || 0 });
+      return;
+    }
+
+    // UI endpoint - no auth required for viewing
+    if (pathname === '/ui' || pathname === '/ui/' || pathname.startsWith('/ui/')) {
+      const uiContent = renderUI(pathname, store);
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.end(uiContent);
       return;
     }
 
